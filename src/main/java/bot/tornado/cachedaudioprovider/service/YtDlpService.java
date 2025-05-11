@@ -16,11 +16,11 @@ import java.util.function.Consumer;
 @Service
 @Slf4j
 public class YtDlpService {
-    public SongMetadata extractBySearch(String search) {
+    public static SongMetadata extractBySearch(String search) {
         return null;
     }
 
-    public SongMetadata extractByYoutubeId(String youtubeId) {
+    public static SongMetadata extractByYoutubeId(String youtubeId) {
         Process process;
         try {
             process = createProcess(youtubeId);
