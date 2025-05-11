@@ -44,5 +44,10 @@ public class FuzzyMatch {
         return list.indexOf(entriesWithScore.entry);
     }
 
+    public static <T> double getSimilarity(Tuple<T> a, String b) {
+        int maxLen = Math.max(a.entry.toString().length(), b.length());
+        return maxLen == 0 ? 1.0 : 1.0 - ((double) a.score / maxLen);
+    }
+
     public record Tuple<T>(T entry, int score) {}
 }
