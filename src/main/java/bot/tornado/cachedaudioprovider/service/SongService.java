@@ -16,6 +16,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SongService {
     private final SongRepository songRepository;
+    private final YtDlpService ytDlpService;
 
     public Song getOrDownloadSong(SongRequest request) throws SongNotResolvableException {
         SongMetadata metadata = null;
@@ -25,7 +26,7 @@ public class SongService {
             if (song.isPresent()) {
                 return song.get();
             }
-            metadata = YtDlpService.extractByYoutubeId(request.getYoutubeId());
+            metadata = this.ytDlpService.extractByYoutubeId(request.getYoutubeId());
         }
         if (request.getSpotifyId() != null) {
             Optional<Song> song = this.songRepository.findBySpotifyId(request.getSpotifyId());
@@ -70,6 +71,7 @@ public class SongService {
     private Song buildFromMetadata(SongMetadata metadata, SongRequest request) {
         return Song
                 .builder()
+                .youtubeId(metadata.getYoutubeId())
                 .title(metadata.getTitle())
                 .artist(metadata.getArtist())
                 .channelUrl(metadata.getChannelUrl())

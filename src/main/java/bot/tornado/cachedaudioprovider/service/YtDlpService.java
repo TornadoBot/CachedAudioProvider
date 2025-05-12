@@ -1,7 +1,8 @@
 package bot.tornado.cachedaudioprovider.service;
 
+import bot.tornado.cachedaudioprovider.config.StorageProperties;
 import bot.tornado.cachedaudioprovider.dto.SongMetadata;
-import bot.tornado.cachedaudioprovider.util.Parser;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -15,15 +16,18 @@ import java.util.function.Consumer;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class YtDlpService {
+    private final StorageProperties storageProperties;
+
     public static SongMetadata extractBySearch(String search) {
         return null;
     }
 
-    public static SongMetadata extractByYoutubeId(String youtubeId) {
+    public SongMetadata extractByYoutubeId(String youtubeId) {
         Process process;
         try {
-            process = createProcess(youtubeId);
+            process = this.createProcess(youtubeId);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -62,25 +66,11 @@ public class YtDlpService {
         if (metadataString == null) {
             throw new RuntimeException("yt-dlp failed to extract metadata");
         }
-        return parseMetadataLine(metadataString);
+        return SongMetadata.fromDelimitedString(metadataString);
     }
 
-    public SongMetadata extractByTitleAndArtist(String title) {
+    public SongMetadata extractByTitleAndArtist(String title, String artist) {
         return null;
-    }
-
-    private static SongMetadata parseMetadataLine(String metadata) {
-        String[] split = metadata.split(";");
-        return SongMetadata.builder()
-                .youtubeId(split[0])
-                .title(split[1])
-                .artist(split[2])
-                .channelUrl(split[3])
-                .duration(Parser.parseIntFailSave(split[4]))
-                .likeCount(Parser.parseIntFailSave(split[5]))
-                .viewCount(Parser.parseIntFailSave(split[6]))
-                .uploadDate(Parser.parseUnixTimestamp(split[7]))
-                .build();
     }
 
     private static Thread createInputConsumer(InputStream inputStream, Consumer<String> outputCallback) {
@@ -96,7 +86,7 @@ public class YtDlpService {
         }, "YtDlpInputConsumer");
     }
 
-    private static Process createProcess(String videoId) throws IOException {
+    private Process createProcess(String videoId) throws IOException {
         String separator = ";";
         String[] metadata = {
                 "id",
@@ -113,13 +103,15 @@ public class YtDlpService {
             metadataFields[i] = "%%(%s)s".formatted(metadata[i]);
         }
         String template = "%s\n".formatted(String.join(separator, metadataFields));
+        String outputPath = "%s/%%(id)s".formatted(this.storageProperties.getPath());
+
         return new ProcessBuilder(
                 "yt-dlp",  // TODO: ADD UPDATE SUPPORT
                 "--format", "bestaudio/best",
                 "--extract-audio",
                 "--audio-format", "mp3",
                 "--no-playlist",
-                "--output", "./data/%(id)s", // TODO: CONFIGURE SO DOCKER VOLUMES WORK
+                "--output", outputPath,
                 "--print", template, "--no-simulate",
                 "--audio-quality", "0",
                 "--replace-in-metadata", String.join(",", metadata), "[%s]".formatted(separator), "%3B",
