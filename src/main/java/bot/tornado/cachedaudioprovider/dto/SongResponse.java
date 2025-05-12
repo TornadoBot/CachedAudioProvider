@@ -25,7 +25,7 @@ public class SongResponse {
                 .title(song.getTitle())
                 .artist(song.getArtist())
                 .duration(song.getDuration())
-                .streamUrl("/song/stream/%s".formatted(song.getYoutubeId()))
+                .streamUrl("/songs/stream/%s".formatted(song.getYoutubeId()))
                 .channelUrl(song.getChannelUrl())
                 .likeCount(song.getLikeCount())
                 .viewCount(song.getViewCount())
