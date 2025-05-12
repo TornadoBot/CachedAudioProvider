@@ -68,6 +68,10 @@ public class SongService {
         return song;
     }
 
+    public void deleteSong(String youtubeId) {
+        this.songRepository.deleteById(youtubeId);
+    }
+
     private Song buildFromMetadata(SongMetadata metadata, SongRequest request) {
         return Song
                 .builder()
