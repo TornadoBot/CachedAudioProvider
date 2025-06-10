@@ -8,6 +8,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "songs")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -32,8 +33,7 @@ public class Song {
 
     private Integer duration; // seconds
 
-    @Setter
-    private boolean cached = true;
+    private boolean cached;
 
     @Column(unique = true)
     private String spotifyId;
