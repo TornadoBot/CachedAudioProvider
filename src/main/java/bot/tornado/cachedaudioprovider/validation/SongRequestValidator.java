@@ -10,13 +10,21 @@ public class SongRequestValidator implements ConstraintValidator<ValidSongReques
         if (request == null) {
             return false;
         }
-        return isNotBlank(request.getYoutubeId())
-                || isNotBlank(request.getSpotifyId())
-                || isNotBlank(request.getSearch())
-                || (isNotBlank(request.getTitle()) && isNotBlank(request.getArtist()));
+        return any(
+            !isBlank(request.getYoutubeId()),
+            !isBlank(request.getSpotifyId()),
+            !(isBlank(request.getTitle()) && isBlank(request.getArtist()))
+        );
     }
 
-    private boolean isNotBlank(String string) {
-        return string != null && !string.isEmpty();
+    private static boolean isBlank(String string) {
+        return string == null || string.isBlank();
+    }
+
+    private static boolean any(Boolean... booleans) {
+        for (Boolean bool : booleans) {
+            if (bool) return true;
+        }
+        return false;
     }
 }
