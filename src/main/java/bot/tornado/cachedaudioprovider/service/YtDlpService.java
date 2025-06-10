@@ -30,6 +30,9 @@ public class YtDlpService {
             process = this.createProcess(youtubeId);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
 
         AtomicReference<String> metadata = new AtomicReference<>();
@@ -70,7 +73,7 @@ public class YtDlpService {
     }
 
     public SongMetadata extractByTitleAndArtist(String title, String artist) {
-        return null;
+        return null; // TODO: Implement.
     }
 
     private static Thread createInputConsumer(InputStream inputStream, Consumer<String> outputCallback) {
@@ -86,7 +89,7 @@ public class YtDlpService {
         }, "YtDlpInputConsumer");
     }
 
-    private Process createProcess(String videoId) throws IOException {
+    private Process createProcess(String videoId) throws IOException, InterruptedException {
         String separator = ";";
         String[] metadata = {
                 "id",
@@ -104,6 +107,11 @@ public class YtDlpService {
         }
         String template = "%s\n".formatted(String.join(separator, metadataFields));
         String outputPath = "%s/%%(id)s".formatted(this.storageProperties.getPath());
+
+        Process updater = new ProcessBuilder(
+                "yt-dlp", "-U"
+        ).start();
+        updater.waitFor(10, TimeUnit.SECONDS);
 
         return new ProcessBuilder(
                 "yt-dlp",  // TODO: ADD UPDATE SUPPORT
