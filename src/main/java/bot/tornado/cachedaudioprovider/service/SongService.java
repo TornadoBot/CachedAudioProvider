@@ -23,13 +23,6 @@ public class SongService {
         throw new RuntimeException("Failed to extract song from request.");
     }
 
-    private Function<String, Song> getExtractor(SongRequest request) {
-        if (!request.getYoutubeId().isBlank()) {
-            return this::extractByYoutubeId;
-        }
-        return null;
-    }
-
     private Song extractByYoutubeId(String youtubeId) {
         Song song = this.songRepository.findByYoutubeId(youtubeId).orElse(new Song());
         if (song.isCached()) {
