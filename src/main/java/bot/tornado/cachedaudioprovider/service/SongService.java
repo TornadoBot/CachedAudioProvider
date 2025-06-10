@@ -21,7 +21,7 @@ public class SongService {
     public Song getOrDownloadSong(SongRequest request) throws SongNotResolvableException {
         SongMetadata metadata = null;
 
-        if (request.getYoutubeId() != null) {
+        if (!request.getYoutubeId().isEmpty()) {
             Optional<Song> song = this.songRepository.findByYoutubeId(request.getYoutubeId());
             if (song.isPresent()) {
                 return song.get();
@@ -35,7 +35,7 @@ public class SongService {
             }
             // TODO: ADD SUPPORT FOR SPOTIFY
         }
-        if (request.getSearch() != null) {
+        if (!request.getSearch().isEmpty()) {
             FuzzyMatch.Tuple<Song> match = null;
             try {
                 match = FuzzyMatch.search(
