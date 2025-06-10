@@ -42,7 +42,6 @@ public class SongController {
         File file = filePath.toFile();
 
         if (!file.exists()) {
-            this.songService.deleteSong(ytid);
             return ResponseEntity.notFound().build();
         }
 
