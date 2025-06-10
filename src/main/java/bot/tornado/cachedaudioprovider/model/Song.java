@@ -8,7 +8,6 @@ import java.time.Instant;
 @Entity
 @Table(name = "songs")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
