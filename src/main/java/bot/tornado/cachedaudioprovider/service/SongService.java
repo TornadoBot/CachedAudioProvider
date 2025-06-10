@@ -5,12 +5,10 @@ import bot.tornado.cachedaudioprovider.dto.SongRequest;
 import bot.tornado.cachedaudioprovider.exception.SongNotResolvableException;
 import bot.tornado.cachedaudioprovider.model.Song;
 import bot.tornado.cachedaudioprovider.repository.SongRepository;
-import bot.tornado.cachedaudioprovider.util.FuzzyMatch;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
@@ -19,71 +17,40 @@ public class SongService {
     private final YtDlpService ytDlpService;
 
     public Song getOrDownloadSong(SongRequest request) throws SongNotResolvableException {
-        SongMetadata metadata = null;
-
-        if (!request.getYoutubeId().isEmpty()) {
-            Optional<Song> song = this.songRepository.findByYoutubeId(request.getYoutubeId());
-            if (song.isPresent()) {
-                return song.get();
-            }
-            metadata = this.ytDlpService.extractByYoutubeId(request.getYoutubeId());
+        if (!request.getYoutubeId().isBlank()) {
+            return this.extractByYoutubeId(request.getYoutubeId());
         }
-        if (request.getSpotifyId() != null) {
-            Optional<Song> song = this.songRepository.findBySpotifyId(request.getSpotifyId());
-            if (song.isPresent()) {
-                return song.get();
-            }
-            // TODO: ADD SUPPORT FOR SPOTIFY
-        }
-        if (!request.getSearch().isEmpty()) {
-            FuzzyMatch.Tuple<Song> match = null;
-            try {
-                match = FuzzyMatch.search(
-                        this.songRepository.findAll(),
-                        request.getSearch()
-                ).getFirst();
-            } catch (NoSuchElementException ignored) {
-                metadata = YtDlpService.extractBySearch(request.getSearch());
-            }
+        throw new RuntimeException("Failed to extract song from request.");
+    }
 
-            if (match != null) {
-                double similarity = FuzzyMatch.getSimilarity(
-                        match,
-                        request.getSearch()
-                );
-                if (similarity > 0.75) {
-                    return match.entry();
-                }
-                metadata = YtDlpService.extractBySearch(request.getSearch());
-            }
+    private Function<String, Song> getExtractor(SongRequest request) {
+        if (!request.getYoutubeId().isBlank()) {
+            return this::extractByYoutubeId;
+        }
+        return null;
+    }
+
+    private Song extractByYoutubeId(String youtubeId) {
+        Song song = this.songRepository.findByYoutubeId(youtubeId).orElse(new Song());
+        if (song.isCached()) {
+            return song;
         }
 
-        // TODO: IMPLEMENT ADVANCED SEARCH
-
-        if (metadata == null) {
-            throw new SongNotResolvableException();
-        }
-        Song song = buildFromMetadata(metadata, request);
+        SongMetadata metadata = this.ytDlpService.extractByYoutubeId(youtubeId);
+        updateSongByMetadata(song, metadata);
+        song.setCached(true);
         this.songRepository.save(song);
         return song;
     }
 
-    public void deleteSong(String youtubeId) {
-        this.songRepository.deleteById(youtubeId);
-    }
-
-    private Song buildFromMetadata(SongMetadata metadata, SongRequest request) {
-        return Song
-                .builder()
-                .youtubeId(metadata.getYoutubeId())
-                .title(metadata.getTitle())
-                .artist(metadata.getArtist())
-                .channelUrl(metadata.getChannelUrl())
-                .likeCount(metadata.getLikeCount())
-                .viewCount(metadata.getViewCount())
-                .uploadDate(metadata.getUploadDate())
-                .duration(metadata.getDuration())
-                .spotifyId(request.getSpotifyId())
-                .build();
+    private static void updateSongByMetadata(Song song, SongMetadata metadata) {
+        song.setYoutubeId(metadata.getYoutubeId());
+        song.setTitle(metadata.getTitle());
+        song.setArtist(metadata.getArtist());
+        song.setChannelUrl(metadata.getChannelUrl());
+        song.setLikeCount(metadata.getLikeCount());
+        song.setViewCount(metadata.getViewCount());
+        song.setUploadDate(metadata.getUploadDate());
+        song.setDuration(metadata.getDuration());
     }
 }
