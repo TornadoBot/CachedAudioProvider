@@ -38,13 +38,12 @@ public class Song {
     @Column(unique = true)
     private String spotifyId;
 
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+    @Column(nullable = false)
+    private Instant extractedAt;
 
     @PrePersist
+    @PreUpdate
     public void prePersist() {
-        if (this.createdAt == null) {
-            this.createdAt = Instant.now();
-        }
+        this.extractedAt = Instant.now();
     }
 }
