@@ -32,6 +32,9 @@ public class Song {
 
     private Integer duration; // seconds
 
+    @Setter
+    private boolean cached = true;
+
     @Column(unique = true)
     private String spotifyId;
 
