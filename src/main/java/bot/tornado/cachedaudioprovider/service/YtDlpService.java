@@ -2,6 +2,7 @@ package bot.tornado.cachedaudioprovider.service;
 
 import bot.tornado.cachedaudioprovider.config.StorageProperties;
 import bot.tornado.cachedaudioprovider.dto.SongMetadata;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -21,7 +25,7 @@ public class YtDlpService {
     private final StorageProperties storageProperties;
 
     public static SongMetadata extractBySearch(String search) {
-        return null;
+        return null;  // TODO: Implement
     }
 
     public SongMetadata extractByYoutubeId(String youtubeId) {
@@ -90,40 +94,49 @@ public class YtDlpService {
     }
 
     private Process createProcess(String videoId) throws IOException, InterruptedException {
-        String separator = ";";
-        String[] metadata = {
-                "id",
-                "title",
-                "uploader",
-                "channel_url",
-                "duration",
-                "like_count",
-                "view_count",
-                "timestamp"
-        };
-        String[] metadataFields = new String[metadata.length];
-        for (int i = 0; i < metadata.length; i++) {
-            metadataFields[i] = "%%(%s)s".formatted(metadata[i]);
-        }
-        String template = "%s\n".formatted(String.join(separator, metadataFields));
-        String outputPath = "%s/%%(id)s".formatted(this.storageProperties.getPath());
-
         Process updater = new ProcessBuilder(
-                "yt-dlp", "-U"
+            "yt-dlp", "-U"
         ).start();
         updater.waitFor(10, TimeUnit.SECONDS);
 
+        MetadataField[] fields = new MetadataField[] {
+            new MetadataField("id", false),
+            new MetadataField("title", true),
+            new MetadataField("uploader", true),
+            new MetadataField("channel_url", false),
+            new MetadataField("duration", false),
+            new MetadataField("like_count", false),
+            new MetadataField("view_count", false),
+            new MetadataField("timestamp", false)
+        };
+
+        String sep = ";";
+        String sepEncoded = URLEncoder.encode(videoId, StandardCharsets.UTF_8);
+        String query = String.join(sep, Arrays.stream(fields).map(MetadataField::toString).toArray(String[]::new));
+        String replaceQuery = String.join(
+            ",",
+            Arrays.stream(fields)
+                .filter(MetadataField::requiresCheck)
+                .map(MetadataField::toString).toArray(String[]::new));
+        String outputPath = "%s/%%(id)s".formatted(this.storageProperties.getPath());
+
         return new ProcessBuilder(
-                "yt-dlp",  // TODO: ADD UPDATE SUPPORT
-                "--format", "bestaudio/best",
-                "--extract-audio",
-                "--audio-format", "mp3",
-                "--no-playlist",
-                "--output", outputPath,
-                "--print", template, "--no-simulate",
-                "--audio-quality", "0",
-                "--replace-in-metadata", String.join(",", metadata), "[%s]".formatted(separator), "%3B",
-                videoId // TODO: ADD COOKIE
+            "yt-dlp",
+            "--format", "bestaudio/best",
+            "--extract-audio",
+            "--audio-format", "mp3",
+            "--no-playlist",
+            "--output", outputPath,
+            "--print", "%s\n".formatted(query), "--no-simulate",
+            "--replace-in-metadata", replaceQuery, "[%s]".formatted(sep), sepEncoded,
+            videoId // TODO: ADD COOKIE
         ).start();
     }
+
+        private record MetadataField(String name, boolean requiresCheck) {
+            @Override
+            public @NonNull String toString() {
+                return "%%(%s)s".formatted(name);
+            }
+        }
 }
