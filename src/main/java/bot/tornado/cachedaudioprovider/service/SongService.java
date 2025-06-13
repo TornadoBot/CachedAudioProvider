@@ -8,7 +8,8 @@ import bot.tornado.cachedaudioprovider.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.function.Function;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,8 @@ public class SongService {
             return song;
         }
 
-        SongMetadata metadata = this.ytDlpService.extractByYoutubeId(youtubeId);
+        CompletableFuture<SongMetadata> future = this.ytDlpService.extractByYoutubeIdAsync(youtubeId);
+        SongMetadata metadata = future.join();
         updateSongByMetadata(song, metadata);
         song.setCached(true);
         this.songRepository.save(song);
