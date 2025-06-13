@@ -1,5 +1,6 @@
 package bot.tornado.cachedaudioprovider.service;
 
+import bot.tornado.cachedaudioprovider.aop.EnsureYtDlpUpdated;
 import bot.tornado.cachedaudioprovider.config.StorageProperties;
 import bot.tornado.cachedaudioprovider.dto.SongMetadata;
 import lombok.NonNull;
@@ -24,11 +25,13 @@ import java.util.function.Consumer;
 public class YtDlpService {
     private final StorageProperties storageProperties;
 
-    public static SongMetadata extractBySearch(String search) {
+    @EnsureYtDlpUpdated
+    public SongMetadata extractBySearch(String search) {
         return null;  // TODO: Implement
     }
 
     public SongMetadata extractByYoutubeId(String youtubeId) {
+    @EnsureYtDlpUpdated
         Process process;
         try {
             process = this.createProcess(youtubeId);
@@ -76,6 +79,7 @@ public class YtDlpService {
         return SongMetadata.fromDelimitedString(metadataString);
     }
 
+    @EnsureYtDlpUpdated
     public SongMetadata extractByTitleAndArtist(String title, String artist) {
         return null; // TODO: Implement.
     }
@@ -94,11 +98,6 @@ public class YtDlpService {
     }
 
     private Process createProcess(String videoId) throws IOException, InterruptedException {
-        Process updater = new ProcessBuilder(
-            "yt-dlp", "-U"
-        ).start();
-        updater.waitFor(10, TimeUnit.SECONDS);
-
         MetadataField[] fields = new MetadataField[] {
             new MetadataField("id", false),
             new MetadataField("title", true),
