@@ -8,14 +8,38 @@ import bot.tornado.cachedaudioprovider.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class SongService {
     private final SongRepository songRepository;
     private final YtDlpService ytDlpService;
+
+    public enum SongRequestStatus {
+        CACHED,
+        ENQUEUED,
+        INVALID
+    }
+
+    public SongRequestStatus getSongStatus(SongRequest request) {
+        if (!request.getYoutubeId().isBlank()) {
+            return this.getSongStatusByYoutubeId(request.getYoutubeId());
+        } // TODO: Implement search, spotify, etc...
+        throw new RuntimeException("Failed to get status for " + request);
+    }
+
+    // TODO: Implement search, spotify, etc...
+
+    public SongRequestStatus getSongStatusByYoutubeId(String youtubeId) {
+        Optional<Song> song = this.songRepository.findByYoutubeId(youtubeId);
+        if (song.isPresent() && song.get().isCached()) {
+            return SongRequestStatus.CACHED;
+        }
+        // TODO: add queue
+        return SongRequestStatus.ENQUEUED;
+    }
 
     public Song getOrDownloadSong(SongRequest request) throws SongNotResolvableException {
         if (!request.getYoutubeId().isBlank()) {
@@ -25,7 +49,7 @@ public class SongService {
     }
 
     private Song extractByYoutubeId(String youtubeId) {
-        Song song = this.songRepository.findByYoutubeId(youtubeId).orElse(new Song());
+        Song song = this.songRepository.findByYoutubeId(youtubeId).orElse(Song.builder().youtubeId(youtubeId).build());
         if (song.isCached()) {
             return song;
         }
@@ -39,7 +63,6 @@ public class SongService {
     }
 
     private static void updateSongByMetadata(Song song, SongMetadata metadata) {
-        song.setYoutubeId(metadata.getYoutubeId());
         song.setTitle(metadata.getTitle());
         song.setArtist(metadata.getArtist());
         song.setChannelUrl(metadata.getChannelUrl());
