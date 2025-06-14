@@ -1,7 +1,7 @@
-package bot.tornado.cachedaudioprovider.service;
+package bot.tornado.cachedaudioprovider.component;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>
  * Thread-safe and non-blocking. Ensures that only one updater runs at a time.
  */
-@Service
+@Component
 @Slf4j
 public class YtDlpUpdater {
     /**
@@ -51,11 +51,11 @@ public class YtDlpUpdater {
         if (this.running.compareAndSet(false, true)) {
             new Thread(() -> {
                 try {
-                    log.info("Updating yt-dlp binaries...");
+                    log.info("Checking for updated yt-dlp binaries...");
                     Process process = new ProcessBuilder("yt-dlp", "-U").start();
                     boolean finished = process.waitFor(10, TimeUnit.SECONDS);
 
-                    if (!finished) {
+                    if (!finished) { // TODO: Add detailed log.
                         log.warn("Failed to update yt-dlp binaries.");
                     } else {
                         this.lastUpdate = Instant.now();

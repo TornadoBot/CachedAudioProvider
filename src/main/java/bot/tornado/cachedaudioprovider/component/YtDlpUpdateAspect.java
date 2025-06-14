@@ -1,4 +1,4 @@
-package bot.tornado.cachedaudioprovider.service;
+package bot.tornado.cachedaudioprovider.component;
 
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.annotation.Aspect;
