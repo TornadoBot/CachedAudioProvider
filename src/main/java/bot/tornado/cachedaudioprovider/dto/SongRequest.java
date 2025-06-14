@@ -13,5 +13,53 @@ public class SongRequest {
     private String search;
     private String title;
     private String artist;
+
+    private Priority priority = Priority.NORMAL;
+
+    public enum Priority {
+        NORMAL, HIGH
+    }
+
+    public enum Type {
+        YOUTUBE_ID,
+        SPOTIFY_ID,
+        SEARCH,
+        TITLE_AND_ARTIST
+    }
+
+    public Type getType() {
+        if (!this.youtubeId.isBlank()) {
+            return Type.YOUTUBE_ID;
+        }
+        if (!this.spotifyId.isBlank()) {
+            return Type.SPOTIFY_ID;
+        }
+        if (!this.search.isBlank()) {
+            return Type.SEARCH;
+        }
+        return Type.TITLE_AND_ARTIST;
+    }
+
+    @Override
+    public String toString() {
+        return switch (this.getType()) {
+            case YOUTUBE_ID -> this.youtubeId;
+            case SPOTIFY_ID -> this.spotifyId;
+            case SEARCH -> this.search;
+            case TITLE_AND_ARTIST -> "%s %s".formatted(this.title, this.artist);
+        };
+    }
+
+    @Override
+    public int hashCode() {
+        return this.toString().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        return this.hashCode() == o.hashCode();
+    }
 }
 

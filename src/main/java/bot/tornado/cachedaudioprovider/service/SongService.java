@@ -1,74 +1,71 @@
 package bot.tornado.cachedaudioprovider.service;
 
-import bot.tornado.cachedaudioprovider.dto.SongMetadata;
+import bot.tornado.cachedaudioprovider.component.SongRequestQueue;
+import bot.tornado.cachedaudioprovider.component.SongRequestQueueWorker;
 import bot.tornado.cachedaudioprovider.dto.SongRequest;
-import bot.tornado.cachedaudioprovider.exception.SongNotResolvableException;
 import bot.tornado.cachedaudioprovider.model.Song;
 import bot.tornado.cachedaudioprovider.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
 public class SongService {
     private final SongRepository songRepository;
-    private final YtDlpService ytDlpService;
+    private final SongRequestQueue queue;
+    private final SongRequestQueueWorker worker;
 
     public enum SongRequestStatus {
         CACHED,
         ENQUEUED,
-        INVALID
+        PROCESSING,
+        UNKNOWN
     }
 
     public SongRequestStatus getSongStatus(SongRequest request) {
-        if (!request.getYoutubeId().isBlank()) {
-            return this.getSongStatusByYoutubeId(request.getYoutubeId());
-        } // TODO: Implement search, spotify, etc...
-        throw new RuntimeException("Failed to get status for " + request);
-    }
+        if (this.queue.contains(request)) {
+            return SongRequestStatus.ENQUEUED;
+        }
+        if (this.worker.getCurrent() == request) {
+            return SongRequestStatus.PROCESSING;
+        }
 
-    // TODO: Implement search, spotify, etc...
+        return switch (request.getType()) {
+            case YOUTUBE_ID -> this.getSongStatusByYoutubeId(request.getYoutubeId());
+            case SPOTIFY_ID -> this.getSongStatusBySpotifyId(request.getSpotifyId());
+            case SEARCH -> this.getSongStatusBySearch(request.getSearch());
+            case TITLE_AND_ARTIST -> this.getSongStatusByTitleAndArtist(request.getTitle(), request.getArtist());
+        };
+    }
 
     public SongRequestStatus getSongStatusByYoutubeId(String youtubeId) {
         Optional<Song> song = this.songRepository.findByYoutubeId(youtubeId);
         if (song.isPresent() && song.get().isCached()) {
             return SongRequestStatus.CACHED;
         }
-        // TODO: add queue
-        return SongRequestStatus.ENQUEUED;
+        return SongRequestStatus.UNKNOWN;
     }
 
-    public Song getOrDownloadSong(SongRequest request) throws SongNotResolvableException {
-        if (!request.getYoutubeId().isBlank()) {
-            return this.extractByYoutubeId(request.getYoutubeId());
+    public SongRequestStatus getSongStatusBySpotifyId(String spotifyId) {
+        Optional<Song> song = this.songRepository.findBySpotifyId(spotifyId);
+        if (song.isPresent() && song.get().isCached()) {
+            return SongRequestStatus.CACHED;
         }
-        throw new RuntimeException("Failed to extract song from request.");
+        return SongRequestStatus.UNKNOWN;
     }
 
-    private Song extractByYoutubeId(String youtubeId) {
-        Song song = this.songRepository.findByYoutubeId(youtubeId).orElse(Song.builder().youtubeId(youtubeId).build());
-        if (song.isCached()) {
-            return song;
+    public SongRequestStatus getSongStatusBySearch(String ignored) {
+        // TODO: Implement search
+        return null;
+    }
+
+    public SongRequestStatus getSongStatusByTitleAndArtist(String title, String artist) {
+        Optional<Song> song = this.songRepository.findByTitleAndArtist(title, artist); // TODO: Implement closed match
+        if (song.isPresent() && song.get().isCached()) {
+            return SongRequestStatus.CACHED;
         }
-
-        CompletableFuture<SongMetadata> future = this.ytDlpService.extractByYoutubeIdAsync(youtubeId);
-        SongMetadata metadata = future.join();
-        updateSongByMetadata(song, metadata);
-        song.setCached(true);
-        this.songRepository.save(song);
-        return song;
-    }
-
-    private static void updateSongByMetadata(Song song, SongMetadata metadata) {
-        song.setTitle(metadata.getTitle());
-        song.setArtist(metadata.getArtist());
-        song.setChannelUrl(metadata.getChannelUrl());
-        song.setLikeCount(metadata.getLikeCount());
-        song.setViewCount(metadata.getViewCount());
-        song.setUploadDate(metadata.getUploadDate());
-        song.setDuration(metadata.getDuration());
+        return SongRequestStatus.UNKNOWN;
     }
 }

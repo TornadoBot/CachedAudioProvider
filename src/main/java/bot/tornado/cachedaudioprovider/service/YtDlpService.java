@@ -6,7 +6,6 @@ import bot.tornado.cachedaudioprovider.dto.SongMetadata;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -16,7 +15,6 @@ import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -28,17 +26,7 @@ public class YtDlpService {
     private final StorageProperties storageProperties;
 
     @EnsureYtDlpUpdated
-    public SongMetadata extractBySearch(String search) {
-        return null;  // TODO: Implement
-    }
-
-    @Async
-    public CompletableFuture<SongMetadata> extractByYoutubeIdAsync(String youtubeId) {
-        return CompletableFuture.completedFuture(extractByYoutubeId(youtubeId));
-    }
-
-    @EnsureYtDlpUpdated
-    protected SongMetadata extractByYoutubeId(String youtubeId) {
+    public SongMetadata extractByYoutubeId(String youtubeId) {
         Process process;
         try {
             process = this.createProcess(youtubeId);
@@ -84,6 +72,11 @@ public class YtDlpService {
             throw new RuntimeException("yt-dlp failed to extract metadata");
         }
         return SongMetadata.fromDelimitedString(metadataString);
+    }
+
+    @EnsureYtDlpUpdated
+    public SongMetadata extractBySearch(String search) {
+        return null;  // TODO: Implement
     }
 
     @EnsureYtDlpUpdated

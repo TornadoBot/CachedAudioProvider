@@ -11,4 +11,6 @@ public interface SongRepository extends JpaRepository<Song, String> {
     Optional<Song> findByYoutubeId(String youtubeId);
 
     Optional<Song> findBySpotifyId(String spotifyId);
+
+    Optional<Song> findByTitleAndArtist(String title, String artist);
 }

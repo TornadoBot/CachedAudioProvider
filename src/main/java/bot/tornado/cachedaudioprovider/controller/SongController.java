@@ -1,11 +1,7 @@
 package bot.tornado.cachedaudioprovider.controller;
 
 import bot.tornado.cachedaudioprovider.config.StorageProperties;
-import bot.tornado.cachedaudioprovider.dto.SongRequest;
-import bot.tornado.cachedaudioprovider.dto.SongResponse;
-import bot.tornado.cachedaudioprovider.model.Song;
 import bot.tornado.cachedaudioprovider.service.SongService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,13 +20,6 @@ import java.nio.file.Path;
 public class SongController {
     private final SongService songService;
     private final StorageProperties storageProperties;
-
-    @PostMapping
-    public ResponseEntity<SongResponse> getOrDownloadSong(@Valid @RequestBody SongRequest request) {
-        Song song = this.songService.getOrDownloadSong(request);
-        SongResponse response = SongResponse.fromSong(song);
-        return ResponseEntity.ok(response);
-    }
 
     @GetMapping("/stream/{ytid}")
     public ResponseEntity<StreamingResponseBody> streamAudio(
