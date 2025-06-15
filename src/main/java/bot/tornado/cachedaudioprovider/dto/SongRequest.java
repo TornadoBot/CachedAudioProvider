@@ -14,11 +14,10 @@ public class SongRequest {
     private String title;
     private String artist;
 
-    private Priority priority = Priority.NORMAL;
-
-    public enum Priority {
-        NORMAL, HIGH
-    }
+    /**
+     * Seconds until the requested source is required.
+     */
+    private int requiredIn = 0;
 
     public enum Type {
         YOUTUBE_ID,
