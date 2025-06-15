@@ -4,6 +4,8 @@ import bot.tornado.cachedaudioprovider.validation.ValidSongRequest;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @ValidSongRequest
@@ -17,7 +19,7 @@ public class SongRequest {
     /**
      * Seconds until the requested source is required.
      */
-    private int requiredIn = 0;
+    private Instant requiredAt;
 
     public enum Type {
         YOUTUBE_ID,

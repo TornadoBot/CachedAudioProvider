@@ -10,7 +10,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 @Component
 public class SongRequestQueue {
     private final BlockingQueue<SongRequest> queue = new PriorityBlockingQueue<>(200,
-            Comparator.comparingInt(SongRequest::getRequiredIn).reversed()
+            Comparator.comparing(SongRequest::getRequiredAt)
     );
 
     public boolean enqueue(final SongRequest request) {
