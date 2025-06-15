@@ -4,6 +4,8 @@ import bot.tornado.cachedaudioprovider.dto.SongMetadata;
 import bot.tornado.cachedaudioprovider.dto.SongRequest;
 import bot.tornado.cachedaudioprovider.model.Song;
 import bot.tornado.cachedaudioprovider.repository.SongRepository;
+import bot.tornado.cachedaudioprovider.service.spotify.SpotifyApiService;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,7 @@ import java.util.Optional;
 public class SongProcessor {
     private final SongRepository songRepository;
     private final YtDlpService ytDlpService;
+    private final SpotifyApiService spotifyService;
 
     public void process(final SongRequest request) {
         switch (request.getType()) {
@@ -37,8 +40,10 @@ public class SongProcessor {
     }
 
     private void processBySpotifyId(final String spotifyId) {
-        // TODO: Implement.
-        // Requires Spotify API Service
+        JsonNode node = this.spotifyService.getTrack(spotifyId);
+        String title = node.get("title").asText();
+        String artist = node.get("artists").get(0).get("name").asText();
+        this.processByTitleAndArtist(title, artist);
     }
 
     private void processBySearch(final String search) {
