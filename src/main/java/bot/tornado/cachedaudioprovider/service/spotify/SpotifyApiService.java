@@ -34,7 +34,7 @@ public class SpotifyApiService {
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", String.format("Bearer %s", encodedAuth));
+        headers.set("Authorization", "Basic " + encodedAuth);
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         HttpEntity<String> request = new HttpEntity<>("grant_type=client_credentials", headers);
 
