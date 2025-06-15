@@ -3,11 +3,15 @@ package bot.tornado.cachedaudioprovider.component;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 
 /**
@@ -49,27 +53,25 @@ public class YtDlpUpdater {
         }
 
         if (this.running.compareAndSet(false, true)) {
-            new Thread(() -> {
-                try {
-                    log.info("Checking for updated yt-dlp binaries...");
-                    Process process = new ProcessBuilder("yt-dlp", "-U").start();
-                    boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+            try {
+                log.info("Checking for updated yt-dlp binaries...");
+                Process process = new ProcessBuilder("yt-dlp", "-U").start();
                 createInputConsumer(process.getInputStream(), log::info).start();
                 createInputConsumer(process.getErrorStream(), log::error).start();
+                boolean finished = process.waitFor(10, TimeUnit.SECONDS);
 
-                    if (!finished) { // TODO: Add detailed log.
-                        log.warn("Failed to update yt-dlp binaries.");
-                    } else {
-                        this.lastUpdate = Instant.now();
-                        log.info("Updated yt-dlp binaries.");
-                    }
-                } catch (InterruptedException | IOException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("Failed to update yt-dlp binaries.", e);
-                } finally {
-                    this.running.set(false);
+                if (!finished) { // TODO: Add detailed log.
+                    log.warn("Failed to update yt-dlp binaries.");
+                } else {
+                    this.lastUpdate = Instant.now();
+                    log.info("Updated yt-dlp binaries.");
                 }
-            }, "yt-dlp-updater").start();
+            } catch (InterruptedException | IOException e) {
+                Thread.currentThread().interrupt();
+                log.error("Failed to update yt-dlp binaries.", e);
+            } finally {
+                this.running.set(false);
+            }
         }
     }
 
