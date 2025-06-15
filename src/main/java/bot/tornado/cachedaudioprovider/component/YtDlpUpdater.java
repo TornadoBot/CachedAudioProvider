@@ -54,6 +54,8 @@ public class YtDlpUpdater {
                     log.info("Checking for updated yt-dlp binaries...");
                     Process process = new ProcessBuilder("yt-dlp", "-U").start();
                     boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+                createInputConsumer(process.getInputStream(), log::info).start();
+                createInputConsumer(process.getErrorStream(), log::error).start();
 
                     if (!finished) { // TODO: Add detailed log.
                         log.warn("Failed to update yt-dlp binaries.");
@@ -69,5 +71,18 @@ public class YtDlpUpdater {
                 }
             }, "yt-dlp-updater").start();
         }
+    }
+
+    private static Thread createInputConsumer(InputStream inputStream, Consumer<String> outputCallback) {
+        return new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    outputCallback.accept(line);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, "YtDlpUpdateConsumer");
     }
 }
