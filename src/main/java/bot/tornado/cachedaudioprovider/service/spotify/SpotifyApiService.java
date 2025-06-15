@@ -65,7 +65,7 @@ public class SpotifyApiService {
 
         HttpEntity<String> request = new HttpEntity<>(headers);
 
-        String url = "https://api.spotify.com/v1/me/tracks/" + spotifyId;
+        String url = "https://api.spotify.com/v1/tracks/%s".formatted(spotifyId);
         ResponseEntity<String> response = this.restTemplate.exchange(url, HttpMethod.GET, request, String.class);
 
         try {
