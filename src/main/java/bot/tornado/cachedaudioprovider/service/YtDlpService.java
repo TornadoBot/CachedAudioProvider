@@ -27,14 +27,18 @@ public class YtDlpService {
 
     @EnsureYtDlpUpdated
     public SongMetadata extractByYoutubeId(String youtubeId) {
+        log.info("Starting extraction for YouTube ID: {}", youtubeId);
+
         Process process;
         try {
             process = this.createProcess(youtubeId);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("Failed to create yt-dlp process for ID: {}", youtubeId, e);
+            throw new IllegalStateException("Failed to create yt-dlp process for ID: " + youtubeId, e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            log.warn("Thread was interrupted while starting yt-dlp process", e);
+            throw new IllegalStateException("yt-dlp process was interrupted", e);
         }
 
         AtomicReference<String> metadata = new AtomicReference<>();
@@ -54,23 +58,29 @@ public class YtDlpService {
             finished = process.waitFor(30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            log.warn("Thread was interrupted while waiting for yt-dlp process to finish", e);
+            throw new IllegalStateException("yt-dlp process was interrupted", e);
         }
 
         if (!finished) {
+            log.error("yt-dlp process timed out for video ID: {}", youtubeId);
             process.destroyForcibly();
-            throw new RuntimeException("yt-dlp process timed out after 30 seconds");
+            throw new IllegalStateException("yt-dlp process timed out after 30 seconds");
         }
 
         int exitCode = process.exitValue();
         if (exitCode != 0) {
-            throw new RuntimeException("yt-dlp exited with code %d".formatted(exitCode));
+            log.error("yt-dlp exited with code {} for video ID: {}", exitCode, youtubeId);
+            throw new IllegalStateException("yt-dlp exited with non-zero exit code: " + exitCode);
         }
 
         String metadataString = metadata.get();
         if (metadataString == null) {
-            throw new RuntimeException("yt-dlp failed to extract metadata");
+            log.error("yt-dlp failed to extract metadata for video ID: {}", youtubeId);
+            throw new IllegalStateException("No metadata returned by yt-dlp");
         }
+        log.info("Successfully extracted metadata for YouTube ID: {}", youtubeId);
+        log.debug("Extracted metadata: {}", metadataString);
         return SongMetadata.fromDelimitedString(metadataString);
     }
 
@@ -98,6 +108,8 @@ public class YtDlpService {
     }
 
     private Process createProcess(String videoId) throws IOException, InterruptedException {
+        log.info("Creating yt-dlp process for {}", videoId);
+
         MetadataField[] fields = new MetadataField[] {
             new MetadataField("id", false),
             new MetadataField("title", true),
@@ -119,7 +131,7 @@ public class YtDlpService {
                 .map(MetadataField::toString).toArray(String[]::new));
         String outputPath = "%s/%%(id)s".formatted(this.storageProperties.getPath());
 
-        return new ProcessBuilder(
+        ProcessBuilder builder = new ProcessBuilder(
             "yt-dlp",
             "--format", "bestaudio/best",
             "--extract-audio",
@@ -128,14 +140,18 @@ public class YtDlpService {
             "--output", outputPath,
             "--print", "%s\n".formatted(query), "--no-simulate",
             "--replace-in-metadata", replaceQuery, "[%s]".formatted(sep), sepEncoded,
-            videoId // TODO: ADD COOKIE
-        ).start();
+            "https://www.youtube.com/watch?v=%s".formatted(videoId) // TODO: ADD COOKIE
+        );
+        log.info("Starting yt-dlp process for {}", videoId);
+        Process process = builder.start();
+        log.debug("YtDlp process started for {}", videoId);
+        return process;
     }
 
-        private record MetadataField(String name, boolean requiresCheck) {
-            @Override
-            public @NonNull String toString() {
-                return "%%(%s)s".formatted(this.name);
-            }
+    private record MetadataField(String name, boolean requiresCheck) {
+        @Override
+        public @NonNull String toString() {
+            return "%%(%s)s".formatted(this.name);
         }
+    }
 }
