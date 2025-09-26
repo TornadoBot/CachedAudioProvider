@@ -1,7 +1,6 @@
 package bot.tornado.cachedaudioprovider.controller;
 
 import bot.tornado.cachedaudioprovider.config.StorageProperties;
-import bot.tornado.cachedaudioprovider.service.SongService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -18,7 +17,6 @@ import java.nio.file.Path;
 @RequestMapping("/songs")
 @RequiredArgsConstructor
 public class SongController {
-    private final SongService songService;
     private final StorageProperties storageProperties;
 
     @GetMapping("/stream/{ytid}")

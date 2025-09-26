@@ -2,6 +2,7 @@ package bot.tornado.cachedaudioprovider.controller;
 
 import bot.tornado.cachedaudioprovider.dto.SongRequest;
 import bot.tornado.cachedaudioprovider.component.SongRequestQueue;
+import bot.tornado.cachedaudioprovider.dto.SongResponse;
 import bot.tornado.cachedaudioprovider.service.SongService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +32,10 @@ public class SongRequestController {
             case ENQUEUED, PROCESSING -> ResponseEntity.accepted().build();
             case UNKNOWN -> ResponseEntity.notFound().build();
         };
+    }
+
+    @GetMapping("/get")
+    public ResponseEntity<SongResponse> getSong(@Valid @RequestBody SongRequest request) {
+        SongService
     }
 }

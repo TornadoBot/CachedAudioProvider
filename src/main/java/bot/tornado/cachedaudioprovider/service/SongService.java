@@ -3,9 +3,13 @@ package bot.tornado.cachedaudioprovider.service;
 import bot.tornado.cachedaudioprovider.component.SongRequestQueue;
 import bot.tornado.cachedaudioprovider.component.SongRequestQueueWorker;
 import bot.tornado.cachedaudioprovider.dto.SongRequest;
+import bot.tornado.cachedaudioprovider.dto.SongResponse;
+import bot.tornado.cachedaudioprovider.exception.SongNotResolvableException;
+import bot.tornado.cachedaudioprovider.mapper.SongMapper;
 import bot.tornado.cachedaudioprovider.model.Song;
 import bot.tornado.cachedaudioprovider.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -59,5 +63,29 @@ public class SongService {
             return SongRequestStatus.CACHED;
         }
         return SongRequestStatus.UNKNOWN;
+    }
+
+    public SongResponse getSong(SongRequest request) {
+        Optional<Song> song = switch (request.getType()) {
+            case YOUTUBE_ID -> this.getSongByYoutubeId(request.getYoutubeId());
+            case SEARCH -> this.getSongBySearch(request.getSearch());
+            case TITLE_AND_ARTIST -> this.getSongByTitleAndArtist(request.getTitle(), request.getArtist());
+        };
+        if (song.isPresent()) {
+            return SongResponse.fromSong(song.get());
+        }
+        throw new SongNotResolvableException("No data is present for %s".formatted(request));
+    }
+
+    private Optional<Song> getSongByYoutubeId(String youtubeId) {
+        return this.songRepository.findByYoutubeId(youtubeId);
+    }
+
+    private Optional<Song> getSongBySearch(String search) {
+        return null; // TODO: implement
+    }
+
+    private Optional<Song> getSongByTitleAndArtist(String title, String artist) {
+        return null; // TODO: implement
     }
 }
