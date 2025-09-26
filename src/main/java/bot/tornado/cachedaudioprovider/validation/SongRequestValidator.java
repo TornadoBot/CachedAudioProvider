@@ -12,7 +12,6 @@ public class SongRequestValidator implements ConstraintValidator<ValidSongReques
         }
         return any(
             !isBlank(request.getYoutubeId()),
-            !isBlank(request.getSpotifyId()),
             !(isBlank(request.getTitle()) && isBlank(request.getArtist()))
         );
     }

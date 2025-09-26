@@ -34,7 +34,6 @@ public class SongService {
 
         return switch (request.getType()) {
             case YOUTUBE_ID -> this.getSongStatusByYoutubeId(request.getYoutubeId());
-            case SPOTIFY_ID -> this.getSongStatusBySpotifyId(request.getSpotifyId());
             case SEARCH -> this.getSongStatusBySearch(request.getSearch());
             case TITLE_AND_ARTIST -> this.getSongStatusByTitleAndArtist(request.getTitle(), request.getArtist());
         };
@@ -42,14 +41,6 @@ public class SongService {
 
     public SongRequestStatus getSongStatusByYoutubeId(String youtubeId) {
         Optional<Song> song = this.songRepository.findByYoutubeId(youtubeId);
-        if (song.isPresent() && song.get().isCached()) {
-            return SongRequestStatus.CACHED;
-        }
-        return SongRequestStatus.UNKNOWN;
-    }
-
-    public SongRequestStatus getSongStatusBySpotifyId(String spotifyId) {
-        Optional<Song> song = this.songRepository.findBySpotifyId(spotifyId);
         if (song.isPresent() && song.get().isCached()) {
             return SongRequestStatus.CACHED;
         }

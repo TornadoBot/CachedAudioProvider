@@ -11,7 +11,6 @@ import java.time.Instant;
 @ValidSongRequest
 public class SongRequest {
     private String youtubeId;
-    private String spotifyId;
     private String search;
     private String title;
     private String artist;
@@ -23,7 +22,6 @@ public class SongRequest {
 
     public enum Type {
         YOUTUBE_ID,
-        SPOTIFY_ID,
         SEARCH,
         TITLE_AND_ARTIST
     }
@@ -31,9 +29,6 @@ public class SongRequest {
     public Type getType() {
         if (!this.youtubeId.isBlank()) {
             return Type.YOUTUBE_ID;
-        }
-        if (!this.spotifyId.isBlank()) {
-            return Type.SPOTIFY_ID;
         }
         if (!this.search.isBlank()) {
             return Type.SEARCH;
@@ -45,7 +40,6 @@ public class SongRequest {
     public String toString() {
         return switch (this.getType()) {
             case YOUTUBE_ID -> this.youtubeId;
-            case SPOTIFY_ID -> this.spotifyId;
             case SEARCH -> this.search;
             case TITLE_AND_ARTIST -> "%s %s".formatted(this.title, this.artist);
         };

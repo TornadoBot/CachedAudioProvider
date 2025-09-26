@@ -60,7 +60,7 @@ public class YtDlpUpdater {
                 createInputConsumer(process.getErrorStream(), log::error).start();
                 boolean finished = process.waitFor(10, TimeUnit.SECONDS);
 
-                if (!finished) { // TODO: Add detailed log.
+                if (!finished) { // TODO: Improve logs
                     log.warn("Failed to update yt-dlp binaries.");
                 } else {
                     this.lastUpdate = Instant.now();

@@ -1,9 +1,7 @@
 package bot.tornado.cachedaudioprovider.model;
 
-import bot.tornado.cachedaudioprovider.dto.SongMetadata;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.boot.Metadata;
 
 import java.time.Instant;
 
@@ -49,13 +47,4 @@ public class Song {
         this.extractedAt = Instant.now();
     }
 
-    public void updateByMetadata(final SongMetadata metadata) {
-        this.title = metadata.getTitle();
-        this.artist = metadata.getArtist();
-        this.channelUrl = metadata.getChannelUrl();
-        this.likeCount = metadata.getLikeCount();
-        this.viewCount = metadata.getViewCount();
-        this.uploadDate = metadata.getUploadDate();
-        this.duration = metadata.getDuration();
-    }
 }
