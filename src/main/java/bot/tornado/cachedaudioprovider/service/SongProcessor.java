@@ -74,10 +74,6 @@ public class SongProcessor {
                     songRequest.getArtist()
             );
         }
-
-        throw new SongNotResolvableException(
-                "Song request must contain a youtubeId, search term, or both title and artist."
-        );
     }
 
 
