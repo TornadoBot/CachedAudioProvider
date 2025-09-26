@@ -8,6 +8,7 @@ import bot.tornado.cachedaudioprovider.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -28,7 +29,7 @@ public class SongService {
         if (this.queue.contains(request)) {
             return SongRequestStatus.ENQUEUED;
         }
-        if (this.worker.getCurrent() == request) {
+        if (Objects.equals(this.worker.getCurrent(), request)) {
             return SongRequestStatus.PROCESSING;
         }
 

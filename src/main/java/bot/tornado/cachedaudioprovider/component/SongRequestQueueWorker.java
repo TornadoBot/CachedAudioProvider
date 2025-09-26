@@ -29,6 +29,8 @@ public class SongRequestQueueWorker {
             this.processor.process(this.current);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+        } finally {
+            this.current = null;
         }
     }
 }
