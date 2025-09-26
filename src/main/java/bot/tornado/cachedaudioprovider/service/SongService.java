@@ -5,13 +5,14 @@ import bot.tornado.cachedaudioprovider.component.SongRequestQueueWorker;
 import bot.tornado.cachedaudioprovider.dto.SongRequest;
 import bot.tornado.cachedaudioprovider.dto.SongResponse;
 import bot.tornado.cachedaudioprovider.exception.SongNotResolvableException;
-import bot.tornado.cachedaudioprovider.mapper.SongMapper;
 import bot.tornado.cachedaudioprovider.model.Song;
 import bot.tornado.cachedaudioprovider.repository.SongRepository;
+import bot.tornado.cachedaudioprovider.util.FuzzyMatch;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -52,17 +53,18 @@ public class SongService {
         return SongRequestStatus.UNKNOWN;
     }
 
-    public SongRequestStatus getSongStatusBySearch(String ignored) {
-        // TODO: Implement search
-        return null;
+    public SongRequestStatus getSongStatusBySearch(String search) {
+        return this.getSongBySearch(search)
+                .filter(Song::isCached)
+                .map(song -> SongRequestStatus.CACHED)
+                .orElse(SongRequestStatus.UNKNOWN);
     }
 
     public SongRequestStatus getSongStatusByTitleAndArtist(String title, String artist) {
-        Optional<Song> song = this.songRepository.findByTitleAndArtist(title, artist); // TODO: Implement closed match
-        if (song.isPresent() && song.get().isCached()) {
-            return SongRequestStatus.CACHED;
-        }
-        return SongRequestStatus.UNKNOWN;
+        return this.getSongByTitleAndArtist(title, artist)
+                .filter(Song::isCached)
+                .map(song -> SongRequestStatus.CACHED)
+                .orElse(SongRequestStatus.UNKNOWN);
     }
 
     public SongResponse getSong(SongRequest request) {
@@ -82,10 +84,32 @@ public class SongService {
     }
 
     private Optional<Song> getSongBySearch(String search) {
-        return null; // TODO: implement
+        List<Song> cachedSongs = this.songRepository.findAllByCachedTrue();
+
+        return cachedSongs.stream()
+                .map(song -> {
+                    double titleScore = FuzzyMatch.similarity(song.getTitle(), search);
+                    double combinedScore = FuzzyMatch.similarity("%s %s".formatted(song.getTitle(), song.getArtist()), search);
+                    double similarity = Math.max(titleScore, combinedScore);
+                    return new FuzzyMatch.Match<>(song, similarity);
+                })
+                .filter(match -> match.similarity() >= 0.6)
+                .max(Comparator.comparing(FuzzyMatch.Match::similarity))
+                .map(FuzzyMatch.Match::entry);
     }
 
     private Optional<Song> getSongByTitleAndArtist(String title, String artist) {
-        return null; // TODO: implement
+        List<Song> cachedSongs = this.songRepository.findAllByCachedTrue();
+
+        return cachedSongs.stream()
+                .map(song -> {
+                    double titleScore = FuzzyMatch.similarity(song.getTitle(), title);
+                    double artistScore = FuzzyMatch.similarity(song.getArtist(), artist);
+                    double similarity = (titleScore + artistScore) / 2.0;
+                    return new FuzzyMatch.Match<>(song, similarity);
+                })
+                .filter(match -> match.similarity() >= 0.7)
+                .max(Comparator.comparing(FuzzyMatch.Match::similarity))
+                .map(FuzzyMatch.Match::entry);
     }
 }
