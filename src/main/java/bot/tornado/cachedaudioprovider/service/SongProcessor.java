@@ -11,7 +11,6 @@ import bot.tornado.cachedaudioprovider.util.FuzzyMatch;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -59,20 +58,11 @@ public class SongProcessor {
      */
     @Transactional
     public void process(SongRequest songRequest) throws SongNotResolvableException {
-
-        if (StringUtils.hasText(songRequest.getYoutubeId())) {
-            this.processFromYoutubeId(songRequest.getYoutubeId());
-        }
-
-        if (StringUtils.hasText(songRequest.getSearch())) {
-            this.processFromSearch(songRequest.getSearch());
-        }
-
-        if (StringUtils.hasText(songRequest.getTitle()) && StringUtils.hasText(songRequest.getArtist())) {
-            this.processFromTitleAndArtist(
-                    songRequest.getTitle(),
-                    songRequest.getArtist()
-            );
+        switch (songRequest.getType()) {
+            case YOUTUBE_ID -> this.processFromYoutubeId(songRequest.getYoutubeId());
+            case SEARCH -> this.processFromSearch(songRequest.getSearch());
+            case TITLE_AND_ARTIST ->  this.processFromTitleAndArtist(songRequest.getTitle(), songRequest.getArtist());
+            default -> throw new SongNotResolvableException();
         }
     }
 

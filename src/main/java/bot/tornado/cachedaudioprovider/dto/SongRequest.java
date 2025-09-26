@@ -3,6 +3,7 @@ package bot.tornado.cachedaudioprovider.dto;
 import bot.tornado.cachedaudioprovider.validation.ValidSongRequest;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 
@@ -27,10 +28,10 @@ public class SongRequest {
     }
 
     public Type getType() {
-        if (!this.youtubeId.isBlank()) {
+        if (StringUtils.hasText(this.youtubeId)) {
             return Type.YOUTUBE_ID;
         }
-        if (!this.search.isBlank()) {
+        if (StringUtils.hasText(this.search)) {
             return Type.SEARCH;
         }
         return Type.TITLE_AND_ARTIST;

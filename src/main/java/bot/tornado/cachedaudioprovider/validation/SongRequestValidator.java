@@ -3,6 +3,7 @@ package bot.tornado.cachedaudioprovider.validation;
 import bot.tornado.cachedaudioprovider.dto.SongRequest;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.springframework.util.StringUtils;
 
 public class SongRequestValidator implements ConstraintValidator<ValidSongRequest, SongRequest> {
     @Override
@@ -11,13 +12,10 @@ public class SongRequestValidator implements ConstraintValidator<ValidSongReques
             return false;
         }
         return any(
-            !isBlank(request.getYoutubeId()),
-            !(isBlank(request.getTitle()) && isBlank(request.getArtist()))
+            StringUtils.hasText(request.getYoutubeId()),
+            StringUtils.hasText(request.getSearch()),
+            (StringUtils.hasText(request.getTitle()) && StringUtils.hasText(request.getArtist()))
         );
-    }
-
-    private static boolean isBlank(String string) {
-        return string == null || string.isBlank();
     }
 
     private static boolean any(Boolean... booleans) {
