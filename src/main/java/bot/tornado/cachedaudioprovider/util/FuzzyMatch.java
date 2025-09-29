@@ -2,6 +2,7 @@ package bot.tornado.cachedaudioprovider.util;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
 public class FuzzyMatch {
@@ -62,6 +63,16 @@ public class FuzzyMatch {
         return search(entries, search, mapper).stream()
                 .filter(m -> m.similarity >= minSimilarity)
                 .findFirst();
+    }
+
+    /**
+     * Returns the best match for a pre-scored list of entries.
+     */
+    public static <T> Optional<Match<T>> bestMatch(List<T> entries, ToDoubleFunction<T> scorer, double minSimilarity) {
+        return entries.stream()
+                .map(entry -> new Match<>(entry, scorer.applyAsDouble(entry)))
+                .filter(match -> match.similarity() >= minSimilarity)
+                .max(Comparator.comparingDouble(Match::similarity));
     }
 
     private static double computeSimilarity(String a, String b, int score) {

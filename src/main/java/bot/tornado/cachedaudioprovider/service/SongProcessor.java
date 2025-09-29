@@ -150,15 +150,15 @@ public class SongProcessor {
     private Song processFromTitleAndArtist(String title, String artist) {
         List<Song> cachedSongs = this.songRepository.findAllByCachedTrue();
 
-        Optional<FuzzyMatch.Match<Song>> match = cachedSongs.stream()
-                .map(song -> {
+        Optional<FuzzyMatch.Match<Song>> match = FuzzyMatch.bestMatch(
+                cachedSongs,
+                song -> {
                     double titleScore = FuzzyMatch.similarity(song.getTitle(), title);
                     double artistScore = FuzzyMatch.similarity(song.getArtist(), artist);
-                    double combinedScore = (titleScore + artistScore) / 2.0;
-                    return new FuzzyMatch.Match<>(song, combinedScore);
-                })
-                .filter(m -> m.similarity() >= 0.7)
-                .max(Comparator.comparing(FuzzyMatch.Match::similarity));
+                    return (titleScore + artistScore) / 2.0;
+                },
+                0.7
+        );
 
         if (match.isPresent()) {
             return match.get().entry();

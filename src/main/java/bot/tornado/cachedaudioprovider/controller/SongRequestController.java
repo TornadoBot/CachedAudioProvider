@@ -36,6 +36,7 @@ public class SongRequestController {
 
     @GetMapping("/get")
     public ResponseEntity<SongResponse> getSong(@Valid @RequestBody SongRequest request) {
-        SongService
+        SongResponse response = this.songService.getSong(request);
+        return ResponseEntity.ok(response);
     }
 }
